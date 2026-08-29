@@ -1,0 +1,4 @@
+fork_order
+*.o
+__pycache__/
+venv/
