@@ -30,7 +30,7 @@
 /* Carga de trabalho artificial: um loop de calculo cuja duracao varia
  * por filho, para simular processos com tempos de execucao diferentes. */
 static void carga_trabalho(int indice_filho, unsigned int seed) {
-    srand(seed + indice_filho * 7919u); /* semente distinta por filho */
+    srand(seed + indice_filho * 7919u); /* seed distinta por filho */
     long iteracoes = 2000000L + (rand() % 8000000L); /* trabalho variavel */
     volatile long acumulador = 0;
     for (long i = 0; i < iteracoes; i++) {
@@ -38,11 +38,9 @@ static void carga_trabalho(int indice_filho, unsigned int seed) {
     }
 }
 
-/* Calcula o numero de inversoes entre duas permutacoes de 0..N-1,
- * usado como uma metrica de distancia (tau de Kendall nao normalizado). */
+/* Calcula o numero de inversoes entre duas permutacoes de 0..N-1 */
 static int contar_inversoes(int *ordem_termino, int n) {
     int inversoes = 0;
-    /* posicao[valor] = posicao do valor na ordem de criacao (identidade) */
     for (int i = 0; i < n; i++) {
         for (int j = i + 1; j < n; j++) {
             if (ordem_termino[i] > ordem_termino[j]) inversoes++;
@@ -69,7 +67,7 @@ int main(int argc, char *argv[]) {
 
     pid_t pids_criacao[MAX_N]; /* PID de cada filho, na ordem de criacao */
 
-    /* --- Fase 1: criacao sequencial dos filhos (fork) --- */
+    /* criacao sequencial dos filhos (fork) */
     for (int i = 0; i < n; i++) {
         pid_t pid = fork();
         if (pid < 0) {
@@ -81,31 +79,33 @@ int main(int argc, char *argv[]) {
             if (modo == 1) {
                 carga_trabalho(i, seed);
             }
-            /* codigo de retorno identifica o indice de criacao deste filho */
             _exit(i);
         }
-        /* processo pai continua o loop, guardando o PID e a ordem de criacao */
         pids_criacao[i] = pid;
     }
 
-    /* --- Fase 2: colheita via wait() em ordem de TERMINO, nao de criacao --- */
+    /* colheita via wait() em ordem de termino --- */
     int ordem_termino[MAX_N];
     for (int k = 0; k < n; k++) {
         int status;
-        pid_t pid_terminado = wait(&status); /* wait() devolve quem terminar primeiro */
+        pid_t pid_terminado = wait(&status);
         int indice_filho = -1;
         for (int i = 0; i < n; i++) {
             if (pids_criacao[i] == pid_terminado) { indice_filho = i; break; }
         }
         int codigo_retorno = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
-        (void)codigo_retorno; /* ja sabemos que == indice_filho, usado so para checagem */
+        (void)codigo_retorno; 
         ordem_termino[k] = indice_filho;
     }
 
-    /* --- Fase 3: comparacao e saida --- */
+    /* comparacao e saida */
     int bateu = 1;
     for (int i = 0; i < n; i++) {
-        if (ordem_termino[i] != i) { bateu = 0; break; }
+        if (ordem_termino[i] != i) { 
+            bateu = 0; 
+            
+            break; 
+        }
     }
     int inversoes = contar_inversoes(ordem_termino, n);
 
