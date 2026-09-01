@@ -20,19 +20,16 @@ REPETICOES = 200
 VALORES_N = [2, 4, 8, 16]
 MODOS = [0, 1]
 
-# --- Fase 1: rodar o experimento, chamando o binario repetidamente ---
-# dicionario comum: cada chave (n, modo) aponta para uma lista de resultados
+
 dados = {}
-linhas_brutas = []  # para salvar em results.csv, igual antes
+linhas_brutas = [] 
 
 for modo in MODOS:
     for n in VALORES_N:
         chave = (n, modo)
-        dados[chave] = []  # cria a lista vazia manualmente, sem defaultdict
+        dados[chave] = [] 
 
         for repeticao in range(REPETICOES):
-            # nao precisamos passar uma semente: o proprio fork_order.c
-            # ja gera uma sozinho (tempo atual + PID) quando nao recebe uma
             resultado = subprocess.run(
                 [BINARIO, str(n), str(modo)],
                 capture_output=True,
@@ -48,13 +45,13 @@ for modo in MODOS:
 
         print("Concluido: N =", n, " modo =", modo, " (", REPETICOES, "execucoes)")
 
-# salva os dados brutos em results.csv, do mesmo jeito que antes
+# salva os dados brutos em results.csv
 with open("results.csv", "w", newline="") as arquivo:
     arquivo.write("n,modo,ordem_criacao,ordem_termino,bateu,inversoes\n")
     for linha in linhas_brutas:
         arquivo.write(linha + "\n")
 
-# --- Fase 2: calcular o resumo, com loops explicitos ---
+#  resumo, com loops explicitos 
 linhas_resumo = []
 
 for modo in MODOS:
@@ -86,7 +83,7 @@ with open("resumo.csv", "w", newline="") as arquivo:
     for linha in linhas_resumo:
         escritor.writerow(linha)
 
-# --- Fase 3: montar o grafico, com loops explicitos em vez de list comprehensions ---
+# monta o grafico de barras comparando os dois modos, para cada valor de N
 pct_modo0 = []
 pct_modo1 = []
 
@@ -108,17 +105,15 @@ largura = 0.35
 
 fig, eixo = plt.subplots(figsize=(6, 4))
 barras0 = eixo.bar([p - largura / 2 for p in posicoes], pct_modo0, largura, label="Modo 0 (sem carga)")
-barras1 = eixo.bar([p + largura / 2 for p in posicoes], pct_modo1, largura, label="Modo 1 (carga variavel)")
+barras1 = eixo.bar([p + largura / 2 for p in posicoes], pct_modo1, largura, label="Modo 1 (carga variável)")
 eixo.set_xticks(list(posicoes))
 eixo.set_xticklabels([str(n) for n in VALORES_N])
-eixo.set_xlabel("N (numero de processos filhos)")
-eixo.set_ylabel("% de execucoes em que a ordem bateu")
-eixo.set_title("Ordem de criacao vs. ordem de termino dos filhos")
-eixo.set_ylim(0, 105)  # garante espaco no topo para os rotulos de texto
+eixo.set_xlabel("N (número de processos filhos)")
+eixo.set_ylabel("% de execuções em que a ordem bateu")
+eixo.set_title("Ordem de criação vs. ordem de término dos filhos")
+eixo.set_ylim(0, 105)  
 eixo.legend()
 
-# escreve o valor exato em cima de cada barra, mesmo quando ela e quase
-# invisivel (proxima de 0%), para nenhum resultado ficar "escondido"
 for grupo_de_barras in (barras0, barras1):
     for barra in grupo_de_barras:
         altura = barra.get_height()
